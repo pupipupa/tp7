@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Compte-rendu TP7 - Memory JavaScript</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        nav a {
+            color: #0b0608; 
+            text-decoration: none; 
+            font-family: 'Press Start 2P', sans-serif;
+            font-size: 14px;
+                  }
+
+        nav a:hover {
+            color: #df80a0; 
+        }
+        body {
+            font-family: Courier New, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Press Start 2P', sans-serif;
+            color: #df70a0;
+        }
+
+        h2 {
+          color: #13050b;
+        }
+
+        .page-garde {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .code-block {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        code {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #f5f5f5;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .conclusion {
+            border-top: 2px solid #3498db;
+            padding-top: 20px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="memory.html">jouer</a> |
+        <a href="compte-rendu-TP7.html">compte rendu</a>
+    </nav>
+    <div class="page-garde">
+        <h1>Compte-rendu de TP7</h1>
+        <h2>Manipulation du DOM, objet JavaScript</h2>
+        <p><strong>Formation:</strong> L1 MATHS-INFO</p>
+        <p><strong>TP:</strong> 7 - Memory JavaScript</p>
+        <p><strong>Nom:</strong> Cordun Anastasia</p>
+        <p><strong>Date:</strong> 30 mars 2025</p>
+    </div>
+
+    <h2>Exercice 1: Jeu de Memory</h2>
+    
+    <h3>Présentation du jeu</h3>
+    <p>Le Memory est un jeu de paires de cartes qui consiste à retrouver les cartes identiques parmi un ensemble de cartes retournées face cachée!</p>
+
+    <h3>Fonction create</h3>
+    <div class="code-block">
+        <pre><code>game.create = function(images, blank) {
+  this.images = images;
+  this.blank = blank;
+  this.positions = shuffleCards(images.length);
+  this.selection = undefined;
+  this.foundCards = [];
+};</code></pre>
+    </div>
+    <p>Cette fonction initialise l'objet game avec les images du jeu et l'image du dos de carte. Elle crée également un tableau positions qui utilise shuffleCards pour mélanger les cartes. La propriété selection permet de garder en mémoire la première carte retournée, tandis que foundCards stocke les cartes déjà trouvées. Le tableau positions contient deux fois chaque index d'image pour créer des paires, ce qui est essentiel pour un jeu de memory fonctionnel.</p>
+
+    <h3>Méthode build</h3>
+    <div class="code-block">
+        <pre><code>game.build = function(div) {
+  this.div = div;
+  this.cards = [];
+  for (let i = 0; i < this.positions.length; i++) {
+    const card = document.createElement('div');
+    const img = document.createElement('img');
+    img.src = this.blank;
+    card.appendChild(img);
+    this.cards.push(card);
+    card.onclick = (function(index) {
+      return function() {
+        game.handleCardClick(index);
+      };
+    })(i);
+    div.appendChild(card);
+  }
+};
+</code></pre>
+    </div>
+    <p>Cette fonction construit l'interface du jeu en créant des éléments DOM pour chaque carte. Chaque carte est un div contenant une image initialement définie comme le dos de carte (this.blank). L'utilisation d'une closure pour la fonction onclick permet de capturer l'index de chaque carte, ce qui est essentiel pour identifier quelle carte a été cliquée!
+    </p>
+
+    <h3>Fonction shuffleCards</h3>
+    <div class="code-block">
+        <pre><code>const shuffleCards = function(length) {
+  let cards = [];
+  for(let i = 0; i < length; i++) {
+    cards.push(i);
+    cards.push(i);
+  }
+  
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  
+  return cards;
+};</code></pre>
+    </div>
+    <p>Cette fonction crée un tableau contenant deux fois chaque index d'image (pour former des paires), puis mélange ces index. Cela permet de distribuer aléatoirement les cartes sur le plateau de jeu.
+       <br> Pendant la phase de développement, une version non mélangée pourrait faciliter le débogage en rendant prévisible l'emplacement des paires. Le mélange aléatoire est essentiel pour rendre le jeu intéressant et imprévisible.</p>
+
+    <h3>Algorithme de gestion des clics</h3>
+    <div class="code-block">
+        <pre><code>game.handleCardClick = function(index) {
+  if (this.foundCards.includes(index) || this.selection === index) {
+    return;
+  }
+  
+  const currentCard = this.cards[index];
+  const imageIndex = this.positions[index];
+  const img = currentCard.querySelector('img');
+  
+  img.src = this.images[imageIndex];
+  
+  if (this.selection === undefined) {
+    this.selection = index;
+  } else {
+    const selectedCard = this.cards[this.selection];
+    const selectedImageIndex = this.positions[this.selection];
+    
+    if (imageIndex === selectedImageIndex) {
+      this.foundCards.push(index);
+      this.foundCards.push(this.selection);
+      this.selection = undefined;
+    } else {
+      const self = this;
+      setTimeout(function() {
+        img.src = self.blank;
+        selectedCard.querySelector('img').src = self.blank;
+        self.selection = undefined;
+      }, 500);
+    }
+  }
+};</code></pre>
+    </div>
+    <p>Cette fonction gère la logique du jeu lorsqu'une carte est cliquée. Elle vérifie d'abord si la carte est déjà trouvée ou déjà sélectionnée, auquel cas rien ne se passe. Sinon, elle affiche l'image correspondante.
+       <br> Si c'est la première carte sélectionnée, elle est mémorisée. Si c'est la seconde, on compare les images. 
+       <br> En cas de correspondance, les cartes sont ajoutées à foundCards. Sinon, après un délai de 500ms, les cartes sont retournées face cachée. L'utilisation de setTimeout avec une variable self permet de conserver la référence à l'objet game dans la fonction de rappel.</p>
+
+    <div class="conclusion">
+        <h2>Conclusion</h2>
+        <p>Ce TP m'a permis d'approfondir mes connaissances en manipulation du DOM. <br> Les principales difficultés rencontrées concernaient la gestion des états du jeu!!!</p>
+        <p>Pour améliorer ce projet, je prévois d'ajouter un compteur de tentatives et un chronomètre.<br> :))) </p>
+    </div>
+</body>
+</html>
